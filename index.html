@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Classroom & Timetable Scheduler</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .sidebar {
+      transition: transform 0.3s ease-in-out;
+    }
+    .sidebar.closed {
+      transform: translateX(-100%);
+    }
+    .toast {
+      transition: opacity 0.5s ease;
+    }
+    @media (min-width: 1024px) {
+      .sidebar.closed {
+        transform: translateX(-100%);
+      }
+      .sidebar:not(.closed) {
+        transform: translateX(0);
+      }
+      .content-shifted {
+        margin-left: 0 !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans 
+             bg-cover bg-center bg-no-repeat bg-fixed
+             min-h-screen"
+      style="background-image: url('bgp1.jpg');">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <button id="toggleSidebar" class="text-white mr-3">
+        <i class="fas fa-bars text-2xl"></i>
+      </button>
+      <div class="flex items-center space-x-3 flex-1 justify-center">
+        <img src="logo.png" alt="LPU Logo" class="h-12 md:h-15"/>
+        <h1 class="text-xl md:text-2xl font-bold text-center">Smart Classroom & Timetable Scheduler</h1>
+      </div>
+      <div class="w-10"></div> <!-- Spacer for centering -->
+    </div>
+  </header>
+
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-white shadow-xl z-50 lg:static">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-indigo-700 mb-6">Menu</h2>
+        <nav class="space-y-2">
+          <a href="#dashboard" class="menu-item block py-3 px-4 rounded-lg bg-indigo-100 text-indigo-700 font-medium flex items-center space-x-3">
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+          </a>
+          <a href="#faculty" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-chalkboard-teacher"></i><span>Faculty</span>
+          </a>
+          <a href="#subjects" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-book"></i><span>Subjects</span>
+          </a>
+          <a href="#classrooms" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-door-open"></i><span>Classrooms</span>
+          </a>
+          <a href="#schedule" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-calendar-alt"></i><span>Generate Schedule</span>
+          </a>
+          <a href="#timetable" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-table"></i><span>View Timetable</span>
+          </a>
+          <a href="#settings" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3">
+            <i class="fas fa-cog"></i><span>Settings</span>
+          </a>
+          <a href="#logout" class="menu-item block py-3 px-4 rounded-lg hover:bg-gray-100 flex items-center space-x-3 text-red-600">
+            <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 bg-black opacity-50 z-40 hidden"></div>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 p-6 lg:p-10 transition-all duration-300">
+      <div id="content-area">
+        <!-- Dashboard -->
+        <section id="dashboard" class="content-section">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Dashboard</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600">Total Faculty</p>
+                  <p id="total-faculty" class="text-3xl font-bold text-indigo-700">0</p>
+                </div>
+                <i class="fas fa-chalkboard-teacher text-4xl text-indigo-300"></i>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600">Total Subjects</p>
+                  <p id="total-subjects" class="text-3xl font-bold text-green-700">0</p>
+                </div>
+                <i class="fas fa-book text-4xl text-green-300"></i>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600">Available Rooms</p>
+                  <p id="total-rooms" class="text-3xl font-bold text-purple-700">0</p>
+                </div>
+                <i class="fas fa-door-open text-4xl text-purple-300"></i>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600">Scheduled Classes</p>
+                  <p id="scheduled-classes" class="text-3xl font-bold text-orange-700">0</p>
+                </div>
+                <i class="fas fa-calendar-check text-4xl text-orange-300"></i>
+              </div>
+            </div>
+          </div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
+            <div class="flex flex-wrap gap-3">
+              <button onclick="showSection('faculty')" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition">Add Faculty</button>
+              <button onclick="showSection('subjects')" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition">Add Subject</button>
+              <button onclick="showSection('classrooms')" class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition">Add Classroom</button>
+              <button onclick="showSection('schedule')" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition">Generate Timetable</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Faculty Section -->
+        <section id="faculty" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Manage Faculty</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md">
+            <form id="faculty-form" class="space-y-4">
+              <input type="hidden" id="faculty-edit-id" value=""/>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" placeholder="Faculty ID" id="faculty-id" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" required/>
+                <input type="text" placeholder="Faculty Name" id="faculty-name" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" required/>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="email" placeholder="Email" id="faculty-email" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500"/>
+                <input type="text" placeholder="Department" id="faculty-dept" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500"/>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="number" placeholder="Max Hours/Week" min="1" max="40" id="faculty-hours" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" value="30"/>
+                <select id="faculty-availability" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" multiple size="3">
+                  <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                  <option>Thursday</option><option>Friday</option><option>Saturday</option>
+                </select>
+                <input type="text" placeholder="Preferred Slots (e.g., 9-11)" id="faculty-slots" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500"/>
+              </div>
+              <div class="flex gap-3">
+                <button type="submit" id="faculty-submit-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">Add Faculty</button>
+                <button type="button" id="faculty-cancel-btn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition hidden">Cancel</button>
+              </div>
+            </form>
+          </div>
+          <div class="mt-6 bg-white p-6 rounded-xl shadow-md overflow-x-auto">
+            <h3 class="text-lg font-semibold mb-3">Faculty List</h3>
+            <table id="faculty-table" class="min-w-full table-auto border-collapse">
+              <thead class="bg-indigo-100">
+                <tr>
+                  <th class="px-4 py-2 text-left">ID</th>
+                  <th class="px-4 py-2 text-left">Name</th>
+                  <th class="px-4 py-2 text-left">Dept</th>
+                  <th class="px-4 py-2 text-left">Hours</th>
+                  <th class="px-4 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Subjects Section -->
+        <section id="subjects" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Manage Subjects</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md">
+            <form id="subject-form" class="space-y-4">
+              <input type="hidden" id="subject-edit-code" value=""/>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" placeholder="Subject Code" id="subject-code" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500" required/>
+                <input type="text" placeholder="Subject Name" id="subject-name" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500" required/>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="number" placeholder="Credits" min="1" max="6" id="subject-credits" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500" value="3"/>
+                <input type="number" placeholder="Hours/Week" min="1" max="10" id="subject-hours" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500" value="3"/>
+                <select id="subject-type" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500">
+                  <option>Theory</option><option>Lab</option><option>Tutorial</option>
+                </select>
+              </div>
+              <input type="text" placeholder="Assigned Faculty ID (comma separated)" id="subject-faculty" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-green-500"/>
+              <div class="flex gap-3">
+                <button type="submit" id="subject-submit-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">Add Subject</button>
+                <button type="button" id="subject-cancel-btn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition hidden">Cancel</button>
+              </div>
+            </form>
+          </div>
+          <div class="mt-6 bg-white p-6 rounded-xl shadow-md overflow-x-auto">
+            <h3 class="text-lg font-semibold mb-3">Subjects List</h3>
+            <table id="subject-table" class="min-w-full table-auto border-collapse">
+              <thead class="bg-green-100">
+                <tr>
+                  <th class="px-4 py-2 text-left">Code</th>
+                  <th class="px-4 py-2 text-left">Name</th>
+                  <th class="px-4 py-2 text-left">Type</th>
+                  <th class="px-4 py-2 text-left">Hours</th>
+                  <th class="px-4 py-2 text-left">Faculty</th>
+                  <th class="px-4 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Classrooms Section -->
+        <section id="classrooms" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Manage Classrooms</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md">
+            <form id="classroom-form" class="space-y-4">
+              <input type="hidden" id="classroom-edit-id" value=""/>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" placeholder="Room ID" id="room-id" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-purple-500" required/>
+                <input type="text" placeholder="Room Name/Block" id="room-name" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-purple-500" required/>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="number" placeholder="Capacity" min="10" max="300" id="room-capacity" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-purple-500" value="60"/>
+                <select id="room-type" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-purple-500">
+                  <option>Theory Room</option><option>Computer Lab</option><option>Science Lab</option><option>Seminar Hall</option>
+                </select>
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" id="room-projector" class="w-5 h-5"/>
+                  <label for="room-projector">Projector</label>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <button type="submit" id="classroom-submit-btn" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">Add Classroom</button>
+                <button type="button" id="classroom-cancel-btn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition hidden">Cancel</button>
+              </div>
+            </form>
+          </div>
+          <div class="mt-6 bg-white p-6 rounded-xl shadow-md overflow-x-auto">
+            <h3 class="text-lg font-semibold mb-3">Classrooms List</h3>
+            <table id="classroom-table" class="min-w-full table-auto border-collapse">
+              <thead class="bg-purple-100">
+                <tr>
+                  <th class="px-4 py-2 text-left">ID</th>
+                  <th class="px-4 py-2 text-left">Name</th>
+                  <th class="px-4 py-2 text-left">Type</th>
+                  <th class="px-4 py-2 text-left">Capacity</th>
+                  <th class="px-4 py-2 text-left">Facilities</th>
+                  <th class="px-4 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Schedule Generator -->
+        <section id="schedule" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Generate Optimized Timetable</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label class="block font-medium mb-2">Select Semester</label>
+                <select id="semester-select" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-orange-500">
+                  <option>Semester 1</option><option>Semester 2</option><option>Semester 3</option>
+                  <option>Semester 4</option><option>Semester 5</option><option>Semester 6</option>
+                  <option>Semester 7</option><option>Semester 8</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-medium mb-2">Select Program</label>
+                <select id="program-select" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-orange-500">
+                  <option>B.Tech CSE</option><option>B.Tech ECE</option><option>BBA</option>
+                  <option>MBA</option><option>B.Pharm</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-6">
+              <label class="block font-medium mb-2">Constraints & Preferences</label>
+              <div class="space-y-2">
+                <label class="flex items-center"><input type="checkbox" checked class="mr-2"/> No faculty overload</label>
+                <label class="flex items-center"><input type="checkbox" checked class="mr-2"/> No room double-booking</label>
+                <label class="flex items-center"><input type="checkbox" class="mr-2"/> Prefer morning labs</label>
+                <label class="flex items-center"><input type="checkbox" class="mr-2"/> Avoid 3+ consecutive lectures</label>
+              </div>
+            </div>
+            <button id="generate-timetable" class="bg-orange-600 text-white px-8 py-3 rounded-lg hover:bg-orange-700 transition flex items-center space-x-2">
+              <i class="fas fa-magic"></i><span>Generate Timetable</span>
+            </button>
+            <div id="generation-status" class="mt-4 text-sm"></div>
+          </div>
+        </section>
+
+        <!-- View Timetable -->
+        <section id="timetable" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Generated Timetable</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md">
+            <div class="flex justify-between mb-4">
+              <select id="timetable-filter" class="border p-2 rounded-lg">
+                <option>All</option><option>Faculty View</option><option>Room View</option><option>Program View</option>
+              </select>
+              <button id="export-pdf" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </button>
+            </div>
+            <div id="timetable-container" class="overflow-x-auto">
+              <table id="timetable-display" class="min-w-full border-collapse text-sm">
+                <thead class="bg-gray-100"></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="content-section hidden">
+          <h2 class="text-3xl font-bold text-indigo-800 mb-6">Settings</h2>
+          <div class="bg-white p-6 rounded-xl shadow-md max-w-2xl">
+            <h3 class="text-xl font-semibold mb-4">Change Login Credentials</h3>
+            <form id="change-credentials-form" class="space-y-5">
+              <div>
+                <label class="block text-gray-700 font-medium mb-2">Current Username</label>
+                <input type="text" id="current-username" class="border p-3 rounded-lg w-full bg-gray-100" disabled />
+              </div>
+              <div>
+                <label class="block text-gray-700 font-medium mb-2">New Username</label>
+                <input type="text" id="new-username" placeholder="Enter new username" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" required />
+              </div>
+              <div>
+                <label class="block text-gray-700 font-medium mb-2">New Password</label>
+                <input type="password" id="new-password" placeholder="Enter new password" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" required />
+              </div>
+              <div>
+                <label class="block text-gray-700 font-medium mb-2">Confirm New Password</label>
+                <input type="password" id="confirm-password" placeholder="Confirm new password" class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500" required />
+              </div>
+              <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition w-full">
+                Update Credentials
+              </button>
+            </form>
+            <p class="text-xs text-gray-500 mt-4">Note: You will be logged out after updating. Use new credentials to log in.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg toast opacity-0 hidden flex items-center space-x-2">
+    <i class="fas fa-check-circle"></i>
+    <span id="toast-message"></span>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+      <h2 class="text-2xl font-bold text-center text-indigo-700 mb-6">Admin Login</h2>
+      <form id="login-form">
+        <input type="text" placeholder="Username" id="login-username" class="border p-3 rounded-lg w-full mb-4 focus:ring-2 focus:ring-indigo-500" required/>
+        <input type="password" placeholder="Password" id="login-password" class="border p-3 rounded-lg w-full mb-6 focus:ring-2 focus:ring-indigo-500" required/>
+        <button type="submit" class="bg-indigo-600 text-white w-full py-3 rounded-lg hover:bg-indigo-700 transition">Login</button>
+      </form>
+      <p class="text-center text-xs text-gray-500 mt-4">For authorized personnel only.</p>
+    </div>
+  </div>
+
+  <script>
+    // Global Data Stores
+    let faculty = [];
+    let subjects = [];
+    let classrooms = [];
+    let timetable = [];
+
+    // Default credentials
+    let credentials = {
+      username: "admin",
+      password: "lpu2025"
+    };
+
+    // Load from localStorage on startup
+    function loadData() {
+      try {
+        if (localStorage.getItem("schedulerCredentials")) {
+          credentials = JSON.parse(localStorage.getItem("schedulerCredentials"));
+        }
+        if (localStorage.getItem("schedulerFaculty")) {
+          faculty = JSON.parse(localStorage.getItem("schedulerFaculty"));
+        }
+        if (localStorage.getItem("schedulerSubjects")) {
+          subjects = JSON.parse(localStorage.getItem("schedulerSubjects"));
+        }
+        if (localStorage.getItem("schedulerClassrooms")) {
+          classrooms = JSON.parse(localStorage.getItem("schedulerClassrooms"));
+        }
+        if (localStorage.getItem("schedulerTimetable")) {
+          timetable = JSON.parse(localStorage.getItem("schedulerTimetable"));
+        }
+        
+        // Render all loaded data
+        renderFaculty();
+        renderSubjects();
+        renderClassrooms();
+        if (timetable.length > 0) {
+          renderTimetable();
+        }
+        updateDashboard();
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      try {
+        localStorage.setItem("schedulerFaculty", JSON.stringify(faculty));
+        localStorage.setItem("schedulerSubjects", JSON.stringify(subjects));
+        localStorage.setItem("schedulerClassrooms", JSON.stringify(classrooms));
+        localStorage.setItem("schedulerTimetable", JSON.stringify(timetable));
+      } catch (error) {
+        console.error('Error saving data:', error);
+        showToast('Error saving data!', 'error');
+      }
+    }
+
+    // Check if user is logged in
+    function checkLoginStatus() {
+      const isLoggedIn = localStorage.getItem("schedulerLoggedIn");
+      if (isLoggedIn === "true") {
+        $('#login-modal').hide();
+        showSection('dashboard');
+      } else {
+        $('#login-modal').show();
+      }
+    }
+
+    // Set login status
+    function setLoginStatus(status) {
+      localStorage.setItem("schedulerLoggedIn", status);
+    }
+
+    // Logout function
+    function logout() {
+      setLoginStatus("false");
+      $('#login-modal').fadeIn();
+      showToast('Logged out successfully.');
+      // Clear form inputs
+      $('#login-username').val('');
+      $('#login-password').val('');
+    }
+
+    // Utility: Show Toast
+    function showToast(message, type = 'success') {
+      const toast = $('#toast');
+      const msg = $('#toast-message');
+      toast.removeClass('bg-green-600 bg-red-600').addClass(type === 'error' ? 'bg-red-600' : 'bg-green-600');
+      msg.text(message);
+      toast.removeClass('opacity-0 hidden').addClass('opacity-100');
+      setTimeout(() => toast.addClass('opacity-0').removeClass('opacity-100'), 3000);
+      setTimeout(() => toast.addClass('hidden'), 3500);
+    }
+
+    // Show Section
+    function showSection(sectionId) {
+      $('.content-section').addClass('hidden');
+      $(`#${sectionId}`).removeClass('hidden');
+      $('.menu-item').removeClass('bg-indigo-100 text-indigo-700').addClass('hover:bg-gray-100');
+      $(`a[href="#${sectionId}"]`).addClass('bg-indigo-100 text-indigo-700').removeClass('hover:bg-gray-100');
+      
+      // Auto-close sidebar on mobile after clicking menu item
+      if (window.innerWidth < 1024) {
+        closeSidebar();
+      }
+
+      // Show current username in settings
+      if (sectionId === 'settings') {
+        $('#current-username').val(credentials.username);
+      }
+    }
+
+    // Sidebar Toggle - Works for both mobile and desktop
+    function toggleSidebar() {
+      const sidebar = $('#sidebar');
+      const overlay = $('#overlay');
+      const mainContent = $('#main-content');
+      
+      sidebar.toggleClass('closed');
+      
+      // Show/hide overlay only on mobile
+      if (window.innerWidth < 1024) {
+        overlay.toggleClass('hidden');
+      } else {
+        // On desktop, adjust main content margin
+        if (sidebar.hasClass('closed')) {
+          mainContent.addClass('content-shifted');
+        } else {
+          mainContent.removeClass('content-shifted');
+        }
+      }
+    }
+
+    function closeSidebar() {
+      const sidebar = $('#sidebar');
+      const overlay = $('#overlay');
+      const mainContent = $('#main-content');
+      
+      sidebar.addClass('closed');
+      overlay.addClass('hidden');
+      
+      if (window.innerWidth >= 1024) {
+        mainContent.addClass('content-shifted');
+      }
+    }
+
+    function openSidebar() {
+      const sidebar = $('#sidebar');
+      const mainContent = $('#main-content');
+      
+      sidebar.removeClass('closed');
+      
+      if (window.innerWidth >= 1024) {
+        mainContent.removeClass('content-shifted');
+      }
+    }
+
+    // Login Handler
+    $('#login-form').on('submit', function(e) {
+      e.preventDefault();
+      const username = $('#login-username').val().trim();
+      const password = $('#login-password').val();
+      if (username === credentials.username && password === credentials.password) {
+        setLoginStatus("true");
+        $('#login-modal').fadeOut();
+        showToast('Login successful!');
+        showSection('dashboard');
+      } else {
+        showToast('Invalid credentials!', 'error');
+      }
+    });
+
+    // Change Credentials
+    $('#change-credentials-form').on('submit', function(e) {
+      e.preventDefault();
+      const newUser = $('#new-username').val().trim();
+      const newPass = $('#new-password').val();
+      const confirmPass = $('#confirm-password').val();
+
+      if (!newUser || !newPass) {
+        showToast('All fields required!', 'error');
+        return;
+      }
+      if (newPass !== confirmPass) {
+        showToast('Passwords do not match!', 'error');
+        return;
+      }
+
+      credentials.username = newUser;
+      credentials.password = newPass;
+      localStorage.setItem("schedulerCredentials", JSON.stringify(credentials));
+
+      showToast('Credentials updated! Logging out...');
+      setTimeout(() => {
+        logout();
+        $('#change-credentials-form')[0].reset();
+      }, 1500);
+    });
+
+    // Faculty Form
+    $('#faculty-form').on('submit', function(e) {
+      e.preventDefault();
+      const id = $('#faculty-id').val().trim();
+      const editId = $('#faculty-edit-id').val();
+      
+      // Check for duplicate ID only when adding new (not editing)
+      if (!editId && faculty.some(f => f.id === id)) {
+        showToast('Faculty ID already exists!', 'error');
+        return;
+      }
+      
+      const facultyData = {
+        id,
+        name: $('#faculty-name').val().trim(),
+        email: $('#faculty-email').val().trim(),
+        dept: $('#faculty-dept').val().trim(),
+        maxHours: parseInt($('#faculty-hours').val()),
+        availability: Array.from($('#faculty-availability option:selected')).map(o => o.value),
+        preferredSlots: $('#faculty-slots').val().trim()
+      };
+      
+      if (editId) {
+        // Update existing faculty
+        const index = faculty.findIndex(f => f.id === editId);
+        if (index !== -1) {
+          faculty[index] = facultyData;
+          showToast('Faculty updated successfully!');
+        }
+        $('#faculty-edit-id').val('');
+        $('#faculty-id').prop('readonly', false);
+        $('#faculty-submit-btn').text('Add Faculty');
+        $('#faculty-cancel-btn').addClass('hidden');
+      } else {
+        // Add new faculty
+        faculty.push(facultyData);
+        showToast('Faculty added successfully!');
+      }
+      
+      saveData();
+      renderFaculty();
+      updateDashboard();
+      this.reset();
+    });
+
+    function renderFaculty() {
+      const tbody = $('#faculty-table tbody');
+      tbody.empty();
+      faculty.forEach(f => {
+        tbody.append(`
+          <tr class="border-b">
+            <td class="px-4 py-2">${f.id}</td>
+            <td class="px-4 py-2">${f.name}</td>
+            <td class="px-4 py-2">${f.dept}</td>
+            <td class="px-4 py-2">${f.maxHours}</td>
+            <td class="px-4 py-2">
+              <button onclick="editFaculty('${f.id}')" class="text-blue-600 hover:underline text-sm mr-3">Edit</button>
+              <button onclick="deleteFaculty('${f.id}')" class="text-red-600 hover:underline text-sm">Delete</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+    
+    window.editFaculty = function(id) {
+      const f = faculty.find(fac => fac.id === id);
+      if (!f) return;
+      
+      $('#faculty-edit-id').val(id);
+      $('#faculty-id').val(f.id);
+      $('#faculty-name').val(f.name);
+      $('#faculty-email').val(f.email);
+      $('#faculty-dept').val(f.dept);
+      $('#faculty-hours').val(f.maxHours);
+      $('#faculty-slots').val(f.preferredSlots);
+      
+      // Set availability
+      $('#faculty-availability option').prop('selected', false);
+      f.availability.forEach(day => {
+        $(`#faculty-availability option:contains("${day}")`).prop('selected', true);
+      });
+      
+      $('#faculty-submit-btn').text('Update Faculty');
+      $('#faculty-cancel-btn').removeClass('hidden');
+      
+      // Scroll to form
+      $('html, body').animate({
+        scrollTop: $('#faculty-form').offset().top - 100
+      }, 500);
+    };
+    
+    $('#faculty-cancel-btn').on('click', function() {
+      $('#faculty-form')[0].reset();
+      $('#faculty-edit-id').val('');
+      $('#faculty-id');
+      $('#faculty-submit-btn').text('Add Faculty');
+      $(this).addClass('hidden');
+    });
+    
+    window.deleteFaculty = function(id) {
+      if (confirm('Are you sure you want to delete this faculty member?')) {
+        faculty = faculty.filter(f => f.id !== id);
+        saveData();
+        renderFaculty();
+        updateDashboard();
+        showToast('Faculty removed.');
+      }
+    };
+
+    // Subject Form
+    $('#subject-form').on('submit', function(e) {
+      e.preventDefault();
+      const code = $('#subject-code').val().trim();
+      const editCode = $('#subject-edit-code').val();
+      
+      // Check for duplicate code only when adding new (not editing)
+      if (!editCode && subjects.some(s => s.code === code)) {
+        showToast('Subject code already exists!', 'error');
+        return;
+      }
+      
+      const subjectData = {
+        code,
+        name: $('#subject-name').val().trim(),
+        credits: parseInt($('#subject-credits').val()),
+        hours: parseInt($('#subject-hours').val()),
+        type: $('#subject-type').val(),
+        faculty: $('#subject-faculty').val().trim().split(',').map(id => id.trim()).filter(id => id)
+      };
+      
+      if (editCode) {
+        // Update existing subject
+        const index = subjects.findIndex(s => s.code === editCode);
+        if (index !== -1) {
+          subjects[index] = subjectData;
+          showToast('Subject updated successfully!');
+        }
+        $('#subject-edit-code').val('');
+        $('#subject-code');
+        $('#subject-submit-btn').text('Add Subject');
+        $('#subject-cancel-btn').addClass('hidden');
+      } else {
+        // Add new subject
+        subjects.push(subjectData);
+        showToast('Subject added!');
+      }
+      
+      saveData();
+      renderSubjects();
+      updateDashboard();
+      this.reset();
+    });
+
+    function renderSubjects() {
+      const tbody = $('#subject-table tbody');
+      tbody.empty();
+      subjects.forEach(s => {
+        tbody.append(`
+          <tr class="border-b">
+            <td class="px-4 py-2">${s.code}</td>
+            <td class="px-4 py-2">${s.name}</td>
+            <td class="px-4 py-2">${s.type}</td>
+            <td class="px-4 py-2">${s.hours}</td>
+            <td class="px-4 py-2">${s.faculty.join(', ')}</td>
+            <td class="px-4 py-2">
+              <button onclick="editSubject('${s.code}')" class="text-blue-600 hover:underline text-sm mr-3">Edit</button>
+              <button onclick="deleteSubject('${s.code}')" class="text-red-600 hover:underline text-sm">Delete</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+    
+    window.editSubject = function(code) {
+      const s = subjects.find(sub => sub.code === code);
+      if (!s) return;
+      
+      $('#subject-edit-code').val(code);
+      $('#subject-code').val(s.code);
+      $('#subject-name').val(s.name);
+      $('#subject-credits').val(s.credits);
+      $('#subject-hours').val(s.hours);
+      $('#subject-type').val(s.type);
+      $('#subject-faculty').val(s.faculty.join(', '));
+      
+      $('#subject-submit-btn').text('Update Subject');
+      $('#subject-cancel-btn').removeClass('hidden');
+      
+      // Scroll to form
+      $('html, body').animate({
+        scrollTop: $('#subject-form').offset().top - 100
+      }, 500);
+    };
+    
+    $('#subject-cancel-btn').on('click', function() {
+      $('#subject-form')[0].reset();
+      $('#subject-edit-code').val('');
+      $('#subject-code');
+      $('#subject-submit-btn').text('Add Subject');
+      $(this).addClass('hidden');
+    });
+    
+    window.deleteSubject = function(code) {
+      if (confirm('Are you sure you want to delete this subject?')) {
+        subjects = subjects.filter(s => s.code !== code);
+        saveData();
+        renderSubjects();
+        updateDashboard();
+        showToast('Subject removed.');
+      }
+    };
+
+    // Classroom Form
+    $('#classroom-form').on('submit', function(e) {
+      e.preventDefault();
+      const id = $('#room-id').val().trim();
+      const editId = $('#classroom-edit-id').val();
+      
+      // Check for duplicate ID only when adding new (not editing)
+      if (!editId && classrooms.some(r => r.id === id)) {
+        showToast('Room ID already exists!', 'error');
+        return;
+      }
+      
+      const roomData = {
+        id,
+        name: $('#room-name').val().trim(),
+        capacity: parseInt($('#room-capacity').val()),
+        type: $('#room-type').val(),
+        projector: $('#room-projector').is(':checked')
+      };
+      
+      if (editId) {
+        // Update existing classroom
+        const index = classrooms.findIndex(r => r.id === editId);
+        if (index !== -1) {
+          classrooms[index] = roomData;
+          showToast('Classroom updated successfully!');
+        }
+        $('#classroom-edit-id').val('');
+        $('#room-id').prop('readonly', false);
+        $('#classroom-submit-btn').text('Add Classroom');
+        $('#classroom-cancel-btn').addClass('hidden');
+      } else {
+        // Add new classroom
+        classrooms.push(roomData);
+        showToast('Classroom added!');
+      }
+      
+      saveData();
+      renderClassrooms();
+      updateDashboard();
+      this.reset();
+    });
+
+    function renderClassrooms() {
+      const tbody = $('#classroom-table tbody');
+      tbody.empty();
+      classrooms.forEach(r => {
+        tbody.append(`
+          <tr class="border-b">
+            <td class="px-4 py-2">${r.id}</td>
+            <td class="px-4 py-2">${r.name}</td>
+            <td class="px-4 py-2">${r.type}</td>
+            <td class="px-4 py-2">${r.capacity}</td>
+            <td class="px-4 py-2">${r.projector ? 'Yes' : 'No'}</td>
+            <td class="px-4 py-2">
+              <button onclick="editClassroom('${r.id}')" class="text-blue-600 hover:underline text-sm mr-3">Edit</button>
+              <button onclick="deleteClassroom('${r.id}')" class="text-red-600 hover:underline text-sm">Delete</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+    
+    window.editClassroom = function(id) {
+      const r = classrooms.find(room => room.id === id);
+      if (!r) return;
+      
+      $('#classroom-edit-id').val(id);
+      $('#room-id').val(r.id);
+      $('#room-name').val(r.name);
+      $('#room-capacity').val(r.capacity);
+      $('#room-type').val(r.type);
+      $('#room-projector').prop('checked', r.projector);
+      
+      $('#classroom-submit-btn').text('Update Classroom');
+      $('#classroom-cancel-btn').removeClass('hidden');
+      
+      // Scroll to form
+      $('html, body').animate({
+        scrollTop: $('#classroom-form').offset().top - 100
+      }, 500);
+    };
+    
+    $('#classroom-cancel-btn').on('click', function() {
+      $('#classroom-form')[0].reset();
+      $('#classroom-edit-id').val('');
+      $('#room-id').prop('readonly', false);
+      $('#classroom-submit-btn').text('Add Classroom');
+      $(this).addClass('hidden');
+    });
+    
+    window.deleteClassroom = function(id) {
+      if (confirm('Are you sure you want to delete this classroom?')) {
+        classrooms = classrooms.filter(r => r.id !== id);
+        saveData();
+        renderClassrooms();
+        updateDashboard();
+        showToast('Classroom removed.');
+      }
+    };
+
+    // Dashboard Update
+    function updateDashboard() {
+      $('#total-faculty').text(faculty.length);
+      $('#total-subjects').text(subjects.length);
+      $('#total-rooms').text(classrooms.length);
+      $('#scheduled-classes').text(timetable.length);
+    }
+
+    // Timetable Generation
+    $('#generate-timetable').on('click', function() {
+      if (faculty.length === 0 || subjects.length === 0 || classrooms.length === 0) {
+        showToast('Add faculty, subjects, and classrooms first!', 'error');
+        return;
+      }
+      $('#generation-status').html('<span class="text-orange-600">Generating optimized timetable... (This may take a few seconds)</span>');
+     
+      setTimeout(() => {
+        timetable = generateTimetable();
+        saveData();
+        renderTimetable();
+        updateDashboard();
+        showSection('timetable');
+        $('#generation-status').html('<span class="text-green-600">Timetable generated successfully!</span>');
+        showToast('Timetable generated!');
+      }, 2000);
+    });
+
+    function generateTimetable() {
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const slots = ['9-10', '10-11', '11-12', '12-1', '2-3', '3-4', '4-5'];
+      const generated = [];
+      subjects.forEach(sub => {
+        let hoursLeft = sub.hours;
+        let attempts = 0;
+        while (hoursLeft > 0 && attempts < 50) {
+          const day = days[Math.floor(Math.random() * days.length)];
+          const slot = slots[Math.floor(Math.random() * slots.length)];
+          const room = classrooms[Math.floor(Math.random() * classrooms.length)];
+          const facultyId = sub.faculty.length > 0 ? sub.faculty[0] : 'TBD';
+          const conflict = generated.some(g =>
+            (g.day === day && g.slot === slot && (g.room === room.id || g.faculty === facultyId))
+          );
+          if (!conflict) {
+            generated.push({
+              subject: sub.code,
+              subjectName: sub.name,
+              faculty: facultyId,
+              room: room.id,
+              day,
+              slot,
+              type: sub.type
+            });
+            hoursLeft--;
+          }
+          attempts++;
+        }
+      });
+      return generated;
+    }
+
+    // Multiple Views Working
+    $('#timetable-filter').on('change', function() {
+      renderTimetable(this.value);
+    });
+
+    function renderTimetable(view = 'All') {
+      const table = $('#timetable-display');
+      const thead = table.find('thead');
+      const tbody = table.find('tbody');
+      thead.empty();
+      tbody.empty();
+
+      if (view === 'All') {
+        renderAllView(thead, tbody);
+      } else if (view === 'Faculty View') {
+        renderFacultyView(thead, tbody);
+      } else if (view === 'Room View') {
+        renderRoomView(thead, tbody);
+      } else if (view === 'Program View') {
+        renderProgramView(thead, tbody);
+      }
+    }
+
+    function renderAllView(thead, tbody) {
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const slots = ['9-10', '10-11', '11-12', '12-1', '2-3', '3-4', '4-5'];
+
+      let header = '<tr><th class="border px-4 py-2 bg-gray-200">Time Slot</th>';
+      days.forEach(d => header += `<th class="border px-4 py-2 bg-gray-200">${d}</th>`);
+      header += '</tr>';
+      thead.append(header);
+
+      slots.forEach(slot => {
+        let row = `<tr><td class="border px-4 py-2 font-medium bg-gray-50">${slot}</td>`;
+        days.forEach(day => {
+          const entry = timetable.find(t => t.day === day && t.slot === slot);
+          if (entry) {
+            row += `<td class="border px-4 py-2 text-xs leading-tight">
+              <div class="font-bold text-indigo-700">${entry.subject}</div>
+              <div class="text-gray-600">${entry.subjectName}</div>
+              <div>${entry.faculty} @ ${entry.room}</div>
+            </td>`;
+          } else {
+            row += `<td class="border px-4 py-2 bg-gray-50 text-center">-</td>`;
+          }
+        });
+        row += '</tr>';
+        tbody.append(row);
+      });
+    }
+
+    function renderFacultyView(thead, tbody) {
+      const faculties = [...new Set(timetable.map(t => t.faculty))].sort();
+      let header = '<tr><th class="border px-4 py-2 bg-gray-200">Faculty</th>';
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      days.forEach(d => header += `<th class="border px-4 py-2 bg-gray-200">${d}</th>`);
+      header += '</tr>';
+      thead.append(header);
+
+      faculties.forEach(fac => {
+        let row = `<tr><td class="border px-4 py-2 font-semibold bg-indigo-50">${fac}</td>`;
+        days.forEach(day => {
+          const daySlots = timetable.filter(t => t.faculty === fac && t.day === day);
+          let cell = '';
+          daySlots.forEach(s => {
+            cell += `<div class="text-xs mb-1 p-1 bg-indigo-100 rounded"><strong>${s.slot}</strong>: ${s.subject} (${s.room})</div>`;
+          });
+          if (!cell) cell = '<span class="text-gray-400">-</span>';
+          row += `<td class="border px-4 py-2 align-top">${cell}</td>`;
+        });
+        row += '</tr>';
+        tbody.append(row);
+      });
+    }
+
+    function renderRoomView(thead, tbody) {
+      const rooms = [...new Set(timetable.map(t => t.room))].sort();
+      let header = '<tr><th class="border px-4 py-2 bg-gray-200">Room</th>';
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      days.forEach(d => header += `<th class="border px-4 py-2 bg-gray-200">${d}</th>`);
+      header += '</tr>';
+      thead.append(header);
+
+      rooms.forEach(room => {
+        let row = `<tr><td class="border px-4 py-2 font-semibold bg-purple-50">${room}</td>`;
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
+          const daySlots = timetable.filter(t => t.room === room && t.day === day);
+          let cell = '';
+          daySlots.forEach(s => {
+            cell += `<div class="text-xs mb-1 p-1 bg-purple-100 rounded"><strong>${s.slot}</strong>: ${s.subject} (${s.faculty})</div>`;
+          });
+          if (!cell) cell = '<span class="text-gray-400">-</span>';
+          row += `<td class="border px-4 py-2 align-top">${cell}</td>`;
+        });
+        row += '</tr>';
+        tbody.append(row);
+      });
+    }
+
+    function renderProgramView(thead, tbody) {
+      thead.append('<tr><th class="border px-4 py-2 bg-gray-200" colspan="5" class="text-center text-lg font-bold">Program-wise View (All Scheduled Classes)</th></tr>');
+      thead.append('<tr><th class="border px-4 py-2 bg-gray-200">Subject</th><th>Day</th><th>Time</th><th>Faculty</th><th>Room</th></tr>');
+
+      const sorted = [...timetable].sort((a, b) => a.subject.localeCompare(b.subject));
+      if (sorted.length === 0) {
+        tbody.append('<tr><td colspan="5" class="text-center py-8 text-gray-500">No classes scheduled yet</td></tr>');
+      }
+      sorted.forEach(t => {
+        tbody.append(`
+          <tr class="hover:bg-gray-50">
+            <td class="border px-4 py-2 font-medium">${t.subject} - ${t.subjectName}</td>
+            <td class="border px-4 py-2">${t.day}</td>
+            <td class="border px-4 py-2">${t.slot}</td>
+            <td class="border px-4 py-2">${t.faculty}</td>
+            <td class="border px-4 py-2">${t.room}</td>
+          </tr>
+        `);
+      });
+    }
+
+    // Export PDF
+    $('#export-pdf').on('click', function() {
+      window.print();
+    });
+
+    // Sidebar Menu Click
+    $('.menu-item').on('click', function(e) {
+      e.preventDefault();
+      const href = $(this).attr('href');
+      if (href === '#logout') {
+        logout();
+      } else {
+        showSection(href.substring(1));
+      }
+    });
+
+    // Mobile Toggle
+    $('#toggleSidebar').on('click', toggleSidebar);
+    $('#overlay').on('click', closeSidebar);
+
+    // Initial Load
+    $(document).ready(function() {
+      loadData();
+      updateDashboard();
+      checkLoginStatus();
+    });
+  </script>
+</body>
+</html>
